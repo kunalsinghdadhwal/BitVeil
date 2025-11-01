@@ -10,7 +10,7 @@ use halo2_proofs::{
     poly::{Rotation, commitment::Params},
     transcript::{Blake2bRead, Blake2bWrite, Challenge255},
 };
-use rand::rngs::OsRng;
+use rand_core::OsRng;
 use std::marker::PhantomData;
 
 // The length of our binary inputs
