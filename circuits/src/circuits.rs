@@ -48,13 +48,13 @@ trait Instructions<F: Field>: Chip<F> {
 }
 
 // The chip which holds the circuit config
-pub struct HammsterChip<F: Field> {
-    config: HammsterConfig,
+pub struct BitVeilChip<F: Field> {
+    config: BitVeilConfig,
     _marker: PhantomData<F>,
 }
 
-impl<F: Field> Chip<F> for HammsterChip<F> {
-    type Config = HammsterConfig;
+impl<F: Field> Chip<F> for BitVeilChip<F> {
+    type Config = BitVeilConfig;
     type Loaded = ();
 
     fn config(&self) -> &Self::Config {
@@ -68,7 +68,7 @@ impl<F: Field> Chip<F> for HammsterChip<F> {
 
 // The configuration of the circuit
 #[derive(Debug, Clone)]
-pub struct HammsterConfig {
+pub struct BitVeilConfig {
     // We have 3 advice columns: one for each input, and one to accumulate the XOR results.
     advice: [Column<Advice>; 3],
 
@@ -82,7 +82,7 @@ pub struct HammsterConfig {
     s_accumulator: Selector,
 }
 
-impl<F: Field> HammsterChip<F> {
+impl<F: Field> BitVeilChip<F> {
     fn construct(config: <Self as Chip<F>>::Config) -> Self {
         Self {
             config,
@@ -134,7 +134,7 @@ impl<F: Field> HammsterChip<F> {
             vec![
                 s_xor
                     * (lhs.clone() + rhs.clone()
-                        - Expression::Constant(F::from(2u64)) * lhs * rhs
+                        - Expression::Constant(F::ONE + F::ONE) * lhs * rhs
                         - out),
             ]
         });
@@ -152,7 +152,7 @@ impl<F: Field> HammsterChip<F> {
             vec![s_accumulator * (inputs_sum - sum)]
         });
 
-        HammsterConfig {
+        BitVeilConfig {
             advice,
             instance,
             s_binary_l,
@@ -169,7 +169,7 @@ struct Number<F: Field>(AssignedCell<F, F>);
 
 // Implement all of the chip traits. In this section, we'll be describing how Layouter will assign values to
 // various cells in the circuit.
-impl<F: Field> Instructions<F> for HammsterChip<F> {
+impl<F: Field> Instructions<F> for BitVeilChip<F> {
     type Num = Number<F>;
 
     // Loads private inputs into two advice columns and checks if the digits are binary values
@@ -232,7 +232,7 @@ impl<F: Field> Instructions<F> for HammsterChip<F> {
                 // Calculate the XOR result using arithmetic to match the gate
                 let xor_result = a_val
                     .value()
-                    .and_then(|a| b_val.value().map(|b| a + b - F::from(2u64) * a * b));
+                    .and_then(|a| b_val.value().map(|b| *a + *b - (F::ONE + F::ONE) * *a * *b));
 
                 // Assign the result to the third advice cell
                 region
@@ -294,13 +294,13 @@ impl<F: Field> Instructions<F> for HammsterChip<F> {
 }
 
 #[derive(Default)]
-pub struct HammsterCircuit<F: Field> {
+pub struct BitVeilCircuit<F: Field> {
     a: [Value<F>; BINARY_LENGTH],
     b: [Value<F>; BINARY_LENGTH],
 }
 
-impl<F: Field> Circuit<F> for HammsterCircuit<F> {
-    type Config = HammsterConfig;
+impl<F: Field> Circuit<F> for BitVeilCircuit<F> {
+    type Config = BitVeilConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
@@ -319,7 +319,7 @@ impl<F: Field> Circuit<F> for HammsterCircuit<F> {
         // We'll also have one instance column for the public input (calculated Hamming distance)
         let instance = meta.instance_column();
 
-        HammsterChip::configure(meta, advice, instance)
+        BitVeilChip::configure(meta, advice, instance)
     }
 
     fn synthesize(
@@ -327,15 +327,15 @@ impl<F: Field> Circuit<F> for HammsterCircuit<F> {
         config: Self::Config,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        let hammster_chip = HammsterChip::<F>::construct(config);
+        let bitveil_chip = BitVeilChip::<F>::construct(config);
 
         // Load private variable vectors & check if each digit is binary
-        let a = hammster_chip.load_private_and_check_binary(
+        let a = bitveil_chip.load_private_and_check_binary(
             layouter.namespace(|| "load a"),
             0,
             self.a,
         )?;
-        let b = hammster_chip.load_private_and_check_binary(
+        let b = bitveil_chip.load_private_and_check_binary(
             layouter.namespace(|| "load b"),
             1,
             self.b,
@@ -344,7 +344,7 @@ impl<F: Field> Circuit<F> for HammsterCircuit<F> {
         // Perform XOR on each row
         let xor_results: Vec<Number<F>> = (0..BINARY_LENGTH)
             .map(|i| {
-                hammster_chip.xor(
+                bitveil_chip.xor(
                     layouter.namespace(|| format!("xor[{}]", i)),
                     a[i].clone(),
                     b[i].clone(),
@@ -354,21 +354,21 @@ impl<F: Field> Circuit<F> for HammsterCircuit<F> {
         let xor_slice: [Number<F>; BINARY_LENGTH] = xor_results.try_into().unwrap();
 
         // Accumulate the results of the XOR output column
-        let accumulate = hammster_chip
-            .accumulator(layouter.namespace(|| "accumulate xor results"), xor_slice)?;
+        let accumulate =
+            bitveil_chip.accumulator(layouter.namespace(|| "accumulate xor results"), xor_slice)?;
 
         // Ensure the accumulated value equals the public input (of the precalculated accumulation value)
-        hammster_chip.expose_public(layouter.namespace(|| "expose accumulate"), accumulate)
+        bitveil_chip.expose_public(layouter.namespace(|| "expose accumulate"), accumulate)
     }
 }
 
 // Draws the layout of the circuit. Super useful for debugging.
 #[cfg(not(target_family = "wasm"))]
-pub fn draw_circuit<F: Field>(k: u32, circuit: &HammsterCircuit<F>) {
+pub fn draw_circuit<F: Field>(k: u32, circuit: &BitVeilCircuit<F>) {
     use plotters::prelude::*;
     let base = BitMapBackend::new("layout.png", (1600, 1600)).into_drawing_area();
     base.fill(&WHITE).unwrap();
-    let base = base.titled("Hammster Circuit", ("sans-serif", 24)).unwrap();
+    let base = base.titled("BitVeil Circuit", ("sans-serif", 24)).unwrap();
 
     halo2_proofs::dev::CircuitLayout::default()
         .show_equality_constraints(true)
@@ -377,15 +377,15 @@ pub fn draw_circuit<F: Field>(k: u32, circuit: &HammsterCircuit<F>) {
 }
 
 // Generates an empty circuit. Useful for generating the proving/verifying keys.
-pub fn empty_circuit() -> HammsterCircuit<Fp> {
-    HammsterCircuit {
+pub fn empty_circuit() -> BitVeilCircuit<Fp> {
+    BitVeilCircuit {
         a: [Value::unknown(); BINARY_LENGTH],
         b: [Value::unknown(); BINARY_LENGTH],
     }
 }
 
 // Creates a circuit from two vector inputs
-pub fn create_circuit(a: Vec<u64>, b: Vec<u64>) -> HammsterCircuit<Fp> {
+pub fn create_circuit(a: Vec<u64>, b: Vec<u64>) -> BitVeilCircuit<Fp> {
     assert_eq!(a.len(), b.len());
     let len = a.len();
     assert!(len <= BINARY_LENGTH);
@@ -410,7 +410,7 @@ pub fn create_circuit(a: Vec<u64>, b: Vec<u64>) -> HammsterCircuit<Fp> {
         .unwrap();
 
     // Create circuit from inputs
-    HammsterCircuit { a: a_vec, b: b_vec }
+    BitVeilCircuit { a: a_vec, b: b_vec }
 }
 
 // Generates setup parameters using k, which is the number of rows of the circuit
@@ -422,7 +422,7 @@ pub fn generate_setup_params(k: u32) -> Params<EqAffine> {
 // Generates the verifying and proving keys. We can pass in an empty circuit to generate these
 pub fn generate_keys(
     params: &Params<EqAffine>,
-    circuit: &HammsterCircuit<Fp>,
+    circuit: &BitVeilCircuit<Fp>,
 ) -> (ProvingKey<EqAffine>, VerifyingKey<EqAffine>) {
     // just to emphasize that for vk, pk we don't need to know the value of `x`
     let vk = keygen_vk(params, circuit).expect("vk should not fail");
@@ -441,7 +441,7 @@ pub fn calculate_hamming_distance(a: Vec<u64>, b: Vec<u64>) -> Vec<Fp> {
 }
 
 // Runs the mock prover and prints any errors
-pub fn run_mock_prover(k: u32, circuit: &HammsterCircuit<Fp>, pub_input: &Vec<Fp>) {
+pub fn run_mock_prover(k: u32, circuit: &BitVeilCircuit<Fp>, pub_input: &Vec<Fp>) {
     let prover =
         MockProver::run(k, circuit, vec![pub_input.clone()]).expect("Mock prover should run");
     let res = prover.verify();
@@ -455,7 +455,7 @@ pub fn run_mock_prover(k: u32, circuit: &HammsterCircuit<Fp>, pub_input: &Vec<Fp
 pub fn generate_proof(
     params: &Params<EqAffine>,
     pk: &ProvingKey<EqAffine>,
-    circuit: HammsterCircuit<Fp>,
+    circuit: BitVeilCircuit<Fp>,
     pub_input: &Vec<Fp>,
 ) -> Vec<u8> {
     println!("Generating proof...");

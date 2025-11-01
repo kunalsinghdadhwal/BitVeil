@@ -1,0 +1,24 @@
+{
+  "name": "circuits",
+  "type": "module",
+  "collaborators": [
+    "Kunal Singh Dadhwal <kunalsinghdadhwal@gmail.com>"
+  ],
+  "description": "Zero-knowledge circuits for BitVeil",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kunalsinghdadhwal/bitveil"
+  },
+  "files": [
+    "circuits_bg.wasm",
+    "circuits.js",
+    "circuits.d.ts"
+  ],
+  "main": "circuits.js",
+  "types": "circuits.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
