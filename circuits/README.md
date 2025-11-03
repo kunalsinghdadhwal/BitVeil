@@ -65,12 +65,6 @@ wasm-pack build --target bundler
 
 # For web (ES modules)
 wasm-pack build --target web
-
-# For Node.js
-wasm-pack build --target nodejs
-
-# For no-modules (vanilla JS)
-wasm-pack build --target no-modules
 ```
 
 The wasm-pack output will be generated in the `pkg/` directory and includes TypeScript definitions for easy integration.
