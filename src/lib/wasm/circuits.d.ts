@@ -1,5 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
+export function init_panic_hook(): void;
 export function setup_params(k: number): Uint8Array;
 export function proof_generate(a: Uint8Array, b: Uint8Array, params_bytes: Uint8Array): Uint8Array;
 export function proof_verify(params_bytes: Uint8Array, hamming_dist: number, proof_bytes: Uint8Array): boolean;
@@ -9,12 +10,16 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly setup_params: (a: number) => any;
-  readonly proof_generate: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
+  readonly proof_generate: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
   readonly proof_verify: (a: number, b: number, c: number, d: number, e: number) => number;
+  readonly init_panic_hook: () => void;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_externrefs: WebAssembly.Table;
+  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
+  readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+  readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }
 

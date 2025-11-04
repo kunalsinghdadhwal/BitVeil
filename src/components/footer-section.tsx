@@ -9,7 +9,7 @@ export default function FooterSection() {
           <div className="space-y-4">
             <p className="font-medium text-black/70">Built with Next.js, Shadcn/UI, WASM, and Halo2 cryptography.</p>
             <Link
-              href="https://github.com"
+              href="https://github.com/kunalsinghdadhwal/bitveil"
               className="inline-block text-black font-black border-b-4 border-black hover:bg-black hover:text-white px-1 transition-all"
             >
               Open-source on GitHub
