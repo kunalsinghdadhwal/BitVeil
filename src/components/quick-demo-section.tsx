@@ -8,7 +8,10 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Copy, Check, Loader2, CheckCircle2, XCircle } from "lucide-react"
-import { generateProof, verifyProof, uint8ArrayToHex } from "@/lib/wasmHelper"
+import { generateProof, verifyProof, uint8ArrayToBase64 } from "@/lib/wasmHelper"
+import RealTimeDistanceCard from "@/components/real-time-distance-card"
+import ProofTesterCard from "@/components/proof-tester-card"
+import { toast } from "sonner"
 
 export default function QuickDemoSection() {
   const [vectorA, setVectorA] = useState("")
@@ -28,9 +31,11 @@ export default function QuickDemoSection() {
     import("@/lib/wasmHelper").then(() => {
       setWasmReady(true)
       console.log("WASM module loaded successfully")
+      toast.success("ZK Circuits loaded successfully!")
     }).catch(err => {
       console.error("Failed to load WASM:", err)
       setError("Failed to initialize ZK circuits")
+      toast.error("Failed to initialize ZK circuits")
     })
   }, [])
 
@@ -58,12 +63,14 @@ export default function QuickDemoSection() {
 
     if (!wasmReady) {
       setError("ZK circuits are still loading, please wait...")
+      toast.error("ZK circuits are still loading, please wait...")
       return
     }
 
     if (!validateVector(vectorA) || !validateVector(vectorB)) return
 
     setLoading(true)
+    toast.loading("Generating zero-knowledge proof...")
 
     try {
       const bitsA = vectorA
@@ -78,14 +85,18 @@ export default function QuickDemoSection() {
       // Generate proof using actual ZK circuits
       const { proof: proofData, hammingDistance } = await generateProof(bitsA, bitsB)
       
-      const proofHex = uint8ArrayToHex(proofData)
+      const proofBase64 = uint8ArrayToBase64(proofData)
       
       setDistance(hammingDistance)
-      setProof(proofHex)
+      setProof(proofBase64)
       setProofBytes(proofData)
+      toast.dismiss()
+      toast.success(`Proof generated! Hamming distance: ${hammingDistance}`)
     } catch (err) {
       console.error("Proof generation failed:", err)
       setError(err instanceof Error ? err.message : "Failed to generate proof")
+      toast.dismiss()
+      toast.error(err instanceof Error ? err.message : "Failed to generate proof")
     } finally {
       setLoading(false)
     }
@@ -96,14 +107,23 @@ export default function QuickDemoSection() {
 
     setVerifying(true)
     setError("")
+    toast.loading("Verifying proof...")
 
     try {
       const isValid = await verifyProof(distance, proofBytes)
       setVerified(isValid)
+      toast.dismiss()
+      if (isValid) {
+        toast.success("Proof verified successfully! ✓")
+      } else {
+        toast.error("Proof verification failed")
+      }
     } catch (err) {
       console.error("Proof verification failed:", err)
       setError(err instanceof Error ? err.message : "Failed to verify proof")
       setVerified(false)
+      toast.dismiss()
+      toast.error(err instanceof Error ? err.message : "Failed to verify proof")
     } finally {
       setVerifying(false)
     }
@@ -124,6 +144,7 @@ export default function QuickDemoSection() {
     if (proof) {
       navigator.clipboard.writeText(proof)
       setCopied(true)
+      toast.success("Proof copied to clipboard!")
       setTimeout(() => setCopied(false), 2000)
     }
   }
@@ -139,8 +160,8 @@ export default function QuickDemoSection() {
             </div>
             <Button
               onClick={loadExample}
-              variant="outline"
-              className="border-2 border-black hover:bg-black hover:text-white font-bold"
+              variant="neutral"
+              className="font-bold"
             >
               LOAD EXAMPLE
             </Button>
@@ -206,7 +227,9 @@ export default function QuickDemoSection() {
             <Button
               type="submit"
               disabled={loading || !wasmReady}
-              className="w-full py-6 text-lg font-black bg-black text-white border-2 border-black hover:bg-white hover:text-black disabled:opacity-50 transition-all uppercase tracking-wide"
+              variant="default"
+              size="lg"
+              className="w-full py-6 text-lg font-black uppercase tracking-wide"
               aria-label={loading ? "Computing proof..." : "Compute Hamming Distance"}
             >
               {loading ? (
@@ -225,6 +248,13 @@ export default function QuickDemoSection() {
             </Button>
           </form>
 
+          {/* Real-time Distance Calculator */}
+          {vectorA && vectorB && (
+            <div className="border-t-4 border-black pt-6">
+              <RealTimeDistanceCard vectorA={vectorA} vectorB={vectorB} />
+            </div>
+          )}
+
           {/* Results */}
           {distance !== null && proof && (
             <div className="border-t-4 border-black pt-8 space-y-6" role="status" aria-live="polite">
@@ -236,7 +266,7 @@ export default function QuickDemoSection() {
               </div>
 
               <div className="bg-black/5 p-4 border-2 border-black">
-                <p className="text-xs font-black uppercase mb-2 tracking-wide">Zero-Knowledge Proof (Hex):</p>
+                <p className="text-xs font-black uppercase mb-2 tracking-wide">Zero-Knowledge Proof (Base64):</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 font-mono text-xs text-black/70 break-all max-h-24 overflow-auto">
                     {proof}
@@ -256,7 +286,9 @@ export default function QuickDemoSection() {
                 <Button
                   onClick={handleVerify}
                   disabled={verifying}
-                  className="w-full py-4 text-base font-black bg-white text-black border-2 border-black hover:bg-black hover:text-white disabled:opacity-50 transition-all uppercase tracking-wide"
+                  variant="neutral"
+                  size="lg"
+                  className="w-full py-4 text-base font-black uppercase tracking-wide"
                   aria-label="Verify proof"
                 >
                   {verifying ? (
@@ -292,6 +324,11 @@ export default function QuickDemoSection() {
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Proof Tester Component */}
+              <div className="pt-6">
+                <ProofTesterCard proof={proofBytes} actualDistance={distance} />
               </div>
             </div>
           )}

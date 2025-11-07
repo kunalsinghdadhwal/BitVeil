@@ -5,7 +5,7 @@ import Link from "next/link"
 
 export default function HeroSection() {
   return (
-    <section className="relative px-4 py-16 md:py-32 border-b-4 border-black">
+    <section className="relative px-4 py-12 md:py-20 border-b-4 border-black">
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]"></div>
       <div className="max-w-6xl mx-auto">
         <Card className="p-12 md:p-20 bg-white border-4 border-black shadow-lg">
@@ -37,7 +37,7 @@ export default function HeroSection() {
               </Link>
               <Link href="/docs" className="w-full sm:w-auto">
                 <Button
-                  variant="outline"
+                  variant="neutral"
                   className="w-full px-8 py-6 text-lg font-black border-2 border-black hover:bg-black hover:text-white transition-all bg-transparent"
                   aria-label="Read Documentation"
                 >
@@ -49,7 +49,7 @@ export default function HeroSection() {
             {/* Demo GIF Placeholder */}
             <div className="pt-8 border-t-4 border-black">
               <img
-                src="/placeholder.svg?height=300&width=500"
+                src="/image.svg?height=300&width=500"
                 alt="Flow diagram: Input vectors → Generate proof → Verify privately"
                 className="w-full max-w-md mx-auto border-4 border-black"
               />
