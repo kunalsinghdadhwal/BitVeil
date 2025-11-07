@@ -29,7 +29,7 @@ export async function getSetupParams(k: number = 8): Promise<Uint8Array> {
         // Try to load from localStorage first
         const storedK = localStorage.getItem(STORAGE_KEYS.SETUP_PARAMS_K);
         const storedParams = localStorage.getItem(STORAGE_KEYS.SETUP_PARAMS);
-        
+
         if (storedK === k.toString() && storedParams) {
             try {
                 cachedParams = base64ToUint8Array(storedParams);
@@ -43,7 +43,7 @@ export async function getSetupParams(k: number = 8): Promise<Uint8Array> {
         console.log(`Generating setup parameters with k=${k} (${2 ** k} rows)...`);
         cachedParams = setup_params(k);
         console.log('Setup parameters generated successfully');
-        
+
         // Store in localStorage
         try {
             localStorage.setItem(STORAGE_KEYS.SETUP_PARAMS, uint8ArrayToBase64(cachedParams));
@@ -93,7 +93,7 @@ export async function generateProof(
     console.log('Generating zero-knowledge proof...');
     try {
         const proof = proof_generate(a, b, params);
-        
+
         // Store proof in localStorage
         try {
             localStorage.setItem(STORAGE_KEYS.LAST_PROOF, uint8ArrayToBase64(proof));
@@ -102,7 +102,7 @@ export async function generateProof(
         } catch (error) {
             console.warn('Failed to save proof to localStorage:', error);
         }
-        
+
         return { proof, hammingDistance };
     } catch (error) {
         console.error('Proof generation failed:', error);
@@ -167,7 +167,7 @@ export function getLastProofFromStorage(): { proof: Uint8Array; hammingDistance:
     try {
         const proofBase64 = localStorage.getItem(STORAGE_KEYS.LAST_PROOF);
         const distanceStr = localStorage.getItem(STORAGE_KEYS.LAST_PROOF_DISTANCE);
-        
+
         if (proofBase64 && distanceStr) {
             const proof = base64ToUint8Array(proofBase64);
             const hammingDistance = parseInt(distanceStr, 10);

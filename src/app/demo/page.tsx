@@ -71,9 +71,9 @@ export default function DemoPage() {
     if (!validateVector(vectorA) || !validateVector(vectorB)) return
 
     setLoading(true)
-    toast.loading("Generating zero-knowledge proof...")
 
-    try {
+    // Use promise toast for proof generation
+    const proofPromise = (async () => {
       const bitsA = vectorA
         .trim()
         .split(/[,\s]+/)
@@ -91,13 +91,21 @@ export default function DemoPage() {
       setDistance(hammingDistance)
       setProof(proofBase64)
       setProofBytes(proofData)
-      toast.dismiss()
-      toast.success(`Proof generated! Hamming distance: ${hammingDistance}`)
+      
+      return { hammingDistance }
+    })()
+
+    toast.promise(proofPromise, {
+      loading: "Generating zero-knowledge proof...",
+      success: (data) => `Proof generated! Hamming distance: ${data.hammingDistance}`,
+      error: (err) => err instanceof Error ? err.message : "Failed to generate proof",
+    })
+
+    try {
+      await proofPromise
     } catch (err) {
       console.error("Proof generation failed:", err)
       setError(err instanceof Error ? err.message : "Failed to generate proof")
-      toast.dismiss()
-      toast.error(err instanceof Error ? err.message : "Failed to generate proof")
     } finally {
       setLoading(false)
     }
@@ -108,23 +116,26 @@ export default function DemoPage() {
 
     setVerifying(true)
     setError("")
-    toast.loading("Verifying proof...")
 
-    try {
+    // Use promise toast for verification
+    const verifyPromise = (async () => {
       const isValid = await verifyProof(distance, proofBytes)
       setVerified(isValid)
-      toast.dismiss()
-      if (isValid) {
-        toast.success("Proof verified successfully! ✓")
-      } else {
-        toast.error("Proof verification failed")
-      }
+      return isValid
+    })()
+
+    toast.promise(verifyPromise, {
+      loading: "Verifying zero-knowledge proof...",
+      success: (isValid) => isValid ? "Proof verified successfully! ✓" : "Proof verification failed",
+      error: (err) => err instanceof Error ? err.message : "Failed to verify proof",
+    })
+
+    try {
+      await verifyPromise
     } catch (err) {
       console.error("Proof verification failed:", err)
       setError(err instanceof Error ? err.message : "Failed to verify proof")
       setVerified(false)
-      toast.dismiss()
-      toast.error(err instanceof Error ? err.message : "Failed to verify proof")
     } finally {
       setVerifying(false)
     }
@@ -215,7 +226,7 @@ export default function DemoPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Link href="/">
-                  <Button variant="neutral" className="border-2 border-black hover:bg-black hover:text-white font-bold">
+                  <Button variant="reverse" className="border-2 border-black hover:bg-black hover:text-white font-bold">
                     <ArrowLeft className="mr-2 w-4 h-4" />
                     BACK
                   </Button>
@@ -227,7 +238,7 @@ export default function DemoPage() {
               </div>
               <Button
                 onClick={handleClearStorage}
-                variant="neutral"
+                variant="reverse"
                 className="border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white font-bold"
               >
                 <Trash2 className="mr-2 w-4 h-4" />
@@ -245,35 +256,35 @@ export default function DemoPage() {
             <div className="flex flex-wrap gap-3">
               <Button
                 onClick={() => loadExample('identical')}
-                variant="neutral"
+                variant="reverse"
                 className="border-2 border-black hover:bg-black hover:text-white font-bold"
               >
                 Identical (0 diff)
               </Button>
               <Button
                 onClick={() => loadExample('similar')}
-                variant="neutral"
+                variant="reverse"
                 className="border-2 border-black hover:bg-black hover:text-white font-bold"
               >
                 Similar (4 diff)
               </Button>
               <Button
                 onClick={() => loadExample('different')}
-                variant="neutral"
+                variant="reverse"
                 className="border-2 border-black hover:bg-black hover:text-white font-bold"
               >
                 Different (16 diff)
               </Button>
               <Button
                 onClick={() => loadExample('opposite')}
-                variant="neutral"
+                variant="reverse"
                 className="border-2 border-black hover:bg-black hover:text-white font-bold"
               >
                 Opposite (32 diff)
               </Button>
               <Button
                 onClick={() => loadExample('random')}
-                variant="neutral"
+                variant="reverse"
                 className="border-2 border-black hover:bg-black hover:text-white font-bold"
               >
                 <Shuffle className="mr-2 w-4 h-4" />
@@ -281,7 +292,7 @@ export default function DemoPage() {
               </Button>
               <Button
                 onClick={clearAll}
-                variant="neutral"
+                variant="reverse"
                 className="border-2 border-black hover:bg-black hover:text-white font-bold ml-auto"
               >
                 Clear All
@@ -354,7 +365,9 @@ export default function DemoPage() {
                   <Button
                     type="submit"
                     disabled={loading || !wasmReady}
-                    className="w-full py-6 text-lg font-black bg-black text-white border-2 border-black hover:bg-white hover:text-black disabled:opacity-50 transition-all uppercase tracking-wide"
+                    variant="reverse"
+                    size="lg"
+                    className="w-full py-6 text-lg font-black uppercase tracking-wide"
                   >
                     {loading ? (
                       <>
@@ -406,7 +419,9 @@ export default function DemoPage() {
                     <Button
                       onClick={handleVerify}
                       disabled={verifying}
-                      className="w-full py-4 text-base font-black bg-white text-black border-2 border-black hover:bg-black hover:text-white disabled:opacity-50 transition-all uppercase tracking-wide"
+                      variant="reverse"
+                      size="lg"
+                      className="w-full py-4 text-base font-black uppercase tracking-wide"
                     >
                       {verifying ? (
                         <>

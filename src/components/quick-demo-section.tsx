@@ -70,9 +70,9 @@ export default function QuickDemoSection() {
     if (!validateVector(vectorA) || !validateVector(vectorB)) return
 
     setLoading(true)
-    toast.loading("Generating zero-knowledge proof...")
 
-    try {
+    // Use promise toast for proof generation
+    const proofPromise = (async () => {
       const bitsA = vectorA
         .trim()
         .split(/[,\s]+/)
@@ -90,13 +90,21 @@ export default function QuickDemoSection() {
       setDistance(hammingDistance)
       setProof(proofBase64)
       setProofBytes(proofData)
-      toast.dismiss()
-      toast.success(`Proof generated! Hamming distance: ${hammingDistance}`)
+      
+      return { hammingDistance }
+    })()
+
+    toast.promise(proofPromise, {
+      loading: "Generating zero-knowledge proof...",
+      success: (data) => `Proof generated! Hamming distance: ${data.hammingDistance}`,
+      error: (err) => err instanceof Error ? err.message : "Failed to generate proof",
+    })
+
+    try {
+      await proofPromise
     } catch (err) {
       console.error("Proof generation failed:", err)
       setError(err instanceof Error ? err.message : "Failed to generate proof")
-      toast.dismiss()
-      toast.error(err instanceof Error ? err.message : "Failed to generate proof")
     } finally {
       setLoading(false)
     }
@@ -107,23 +115,26 @@ export default function QuickDemoSection() {
 
     setVerifying(true)
     setError("")
-    toast.loading("Verifying proof...")
 
-    try {
+    // Use promise toast for verification
+    const verifyPromise = (async () => {
       const isValid = await verifyProof(distance, proofBytes)
       setVerified(isValid)
-      toast.dismiss()
-      if (isValid) {
-        toast.success("Proof verified successfully! ✓")
-      } else {
-        toast.error("Proof verification failed")
-      }
+      return isValid
+    })()
+
+    toast.promise(verifyPromise, {
+      loading: "Verifying zero-knowledge proof...",
+      success: (isValid) => isValid ? "Proof verified successfully! ✓" : "Proof verification failed",
+      error: (err) => err instanceof Error ? err.message : "Failed to verify proof",
+    })
+
+    try {
+      await verifyPromise
     } catch (err) {
       console.error("Proof verification failed:", err)
       setError(err instanceof Error ? err.message : "Failed to verify proof")
       setVerified(false)
-      toast.dismiss()
-      toast.error(err instanceof Error ? err.message : "Failed to verify proof")
     } finally {
       setVerifying(false)
     }
@@ -160,7 +171,7 @@ export default function QuickDemoSection() {
             </div>
             <Button
               onClick={loadExample}
-              variant="neutral"
+              variant="reverse"
               className="font-bold"
             >
               LOAD EXAMPLE
@@ -227,7 +238,7 @@ export default function QuickDemoSection() {
             <Button
               type="submit"
               disabled={loading || !wasmReady}
-              variant="default"
+              variant="reverse"
               size="lg"
               className="w-full py-6 text-lg font-black uppercase tracking-wide"
               aria-label={loading ? "Computing proof..." : "Compute Hamming Distance"}
@@ -286,7 +297,7 @@ export default function QuickDemoSection() {
                 <Button
                   onClick={handleVerify}
                   disabled={verifying}
-                  variant="neutral"
+                  variant="reverse"
                   size="lg"
                   className="w-full py-4 text-base font-black uppercase tracking-wide"
                   aria-label="Verify proof"

@@ -29,7 +29,8 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
               <Link href="/demo" className="w-full sm:w-auto">
                 <Button
-                  className="w-full px-8 py-6 text-lg font-black bg-black text-white border-2 border-black hover:bg-white hover:text-black transition-all"
+                  variant="reverse"
+                  className="w-full px-8 py-6 text-lg font-black"
                   aria-label="Try Full Demo"
                 >
                   TRY DEMO <ArrowRight className="ml-2 w-5 h-5" />
@@ -37,8 +38,8 @@ export default function HeroSection() {
               </Link>
               <Link href="/docs" className="w-full sm:w-auto">
                 <Button
-                  variant="neutral"
-                  className="w-full px-8 py-6 text-lg font-black border-2 border-black hover:bg-black hover:text-white transition-all bg-transparent"
+                  variant="reverse"
+                  className="w-full px-8 py-6 text-lg font-black"
                   aria-label="Read Documentation"
                 >
                   READ DOCS

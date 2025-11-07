@@ -37,22 +37,27 @@ export default function ProofTesterCard({ proof, actualDistance }: ProofTesterCa
     setTesting(true)
     setError("")
     setTestResult(null)
-    toast.loading(`Testing proof with distance ${distance}...`)
 
-    try {
+    // Use promise toast for testing
+    const testPromise = (async () => {
       const isValid = await verifyProof(distance, proof)
       setTestResult({ distance, valid: isValid })
-      toast.dismiss()
-      if (isValid) {
-        toast.success(`✓ Proof verified for distance ${distance}`)
-      } else {
-        toast.error(`✗ Proof rejected for distance ${distance}`)
-      }
+      return { distance, isValid }
+    })()
+
+    toast.promise(testPromise, {
+      loading: `Testing proof with distance ${distance}...`,
+      success: (data) => data.isValid 
+        ? `✓ Proof verified for distance ${data.distance}` 
+        : `✗ Proof rejected for distance ${data.distance}`,
+      error: (err) => err instanceof Error ? err.message : "Failed to verify proof",
+    })
+
+    try {
+      await testPromise
     } catch (err) {
       console.error("Verification failed:", err)
       setError(err instanceof Error ? err.message : "Failed to verify proof")
-      toast.dismiss()
-      toast.error(err instanceof Error ? err.message : "Failed to verify proof")
     } finally {
       setTesting(false)
     }
@@ -104,13 +109,14 @@ export default function ProofTesterCard({ proof, actualDistance }: ProofTesterCa
                 setTestResult(null)
               }}
               onKeyPress={handleKeyPress}
-              className="flex-1 font-mono border-2 border-black focus:border-4 focus:outline-none"
+              className="flex-1 font-mono"
               disabled={testing}
             />
             <Button
               onClick={handleTest}
               disabled={testing || !testDistance}
-              className="px-6 font-black bg-black text-white border-2 border-black hover:bg-white hover:text-black disabled:opacity-50 uppercase"
+              variant="reverse"
+              className="px-6 font-black uppercase"
             >
               {testing ? (
                 <>
@@ -174,18 +180,18 @@ export default function ProofTesterCard({ proof, actualDistance }: ProofTesterCa
             <p className="text-xs font-black uppercase text-black/60 mb-2">Quick Tests:</p>
             <div className="flex flex-wrap gap-2">
               {[0, Math.floor(actualDistance / 2), actualDistance - 1, actualDistance, actualDistance + 1, 32].map((dist) => (
-                <button
+                <Button
                   key={dist}
                   onClick={() => setTestDistance(dist.toString())}
-                  className={`px-3 py-1 text-xs font-bold border-2 border-black transition-all ${
-                    dist === actualDistance
-                      ? "bg-black text-white"
-                      : "bg-white text-black hover:bg-black/10"
+                  variant="reverse"
+                  size="sm"
+                  className={`text-xs font-bold ${
+                    dist === actualDistance ? "bg-main text-main-foreground" : ""
                   }`}
                   disabled={dist < 0 || dist > 32}
                 >
                   {dist}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
