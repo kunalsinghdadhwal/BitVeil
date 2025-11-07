@@ -107,16 +107,16 @@ The compiled binary will be available at `target/release/cli`.
 Initialize setup parameters and generate proving/verifying keys.
 
 ```bash
-bitveil setup [OPTIONS]
+./target/x86_64-unknown-linux-gnu/release/cli setup [OPTIONS]
 ```
 
 **Options:**
 - `-k, --k <K>` - Power of 2 for circuit size (default: 8, meaning 2^8 = 256 rows)
-- `-o, --output <OUTPUT>` - Output directory for setup files (default: ./bitveil-keys)
+- `-o, --output <OUTPUT>` - Output directory for setup files (default: ./keys)
 
 **Example:**
 ```bash
-bitveil setup -k 8 -o ./keys
+./target/x86_64-unknown-linux-gnu/release/cli setup -k 8 -o ./keys
 ```
 
 This generates three files:
@@ -129,22 +129,22 @@ This generates three files:
 Generate a zero-knowledge proof for two binary vectors.
 
 ```bash
-bitveil prove [OPTIONS] --vector-a <VECTOR_A> --vector-b <VECTOR_B>
+./target/x86_64-unknown-linux-gnu/release/cli prove [OPTIONS] --vector-a <VECTOR_A> --vector-b <VECTOR_B>
 ```
 
 **Options:**
-- `-a, --vector-a <VECTOR_A>` - First binary vector (comma-separated, e.g., "1,0,1,0")
-- `-b, --vector-b <VECTOR_B>` - Second binary vector (comma-separated, e.g., "0,1,0,1")
-- `-p, --params <PARAMS>` - Path to setup parameters (default: ./bitveil-keys/params.bin)
-- `-k, --proving-key <PROVING_KEY>` - Path to proving key (default: ./bitveil-keys/proving_key.bin)
+- `--vector-a <VECTOR_A>` - First binary vector (comma-separated, e.g., "1,0,1,0")
+- `--vector-b <VECTOR_B>` - Second binary vector (comma-separated, e.g., "0,1,0,1")
+- `-p, --params <PARAMS>` - Path to setup parameters (default: ./keys/params.bin)
 - `-o, --output <OUTPUT>` - Output file for proof (default: ./proof.bin)
 - `--show-distance` - Print hamming distance (default: true)
 
 **Example:**
 ```bash
-bitveil prove -a "1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0" \
-              -b "0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1" \
-              -o ./my-proof.bin
+./target/x86_64-unknown-linux-gnu/release/cli prove \
+  --vector-a "1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0" \
+  --vector-b "0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1" \
+  -o ./my-proof.bin --params ./keys/params.bin
 ```
 
 #### Verify
@@ -152,18 +152,17 @@ bitveil prove -a "1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
 Verify a zero-knowledge proof.
 
 ```bash
-bitveil verify [OPTIONS] --distance <DISTANCE> --proof <PROOF>
+./target/x86_64-unknown-linux-gnu/release/cli verify [OPTIONS] --distance <DISTANCE> --proof <PROOF>
 ```
 
 **Options:**
 - `-d, --distance <DISTANCE>` - Hamming distance to verify
 - `-p, --proof <PROOF>` - Path to proof file
-- `--params <PARAMS>` - Path to setup parameters (default: ./bitveil-keys/params.bin)
-- `-k, --verifying-key <VERIFYING_KEY>` - Path to verifying key (default: ./bitveil-keys/verifying_key.bin)
+- `--params <PARAMS>` - Path to setup parameters (default: ./keys/params.bin)
 
 **Example:**
 ```bash
-bitveil verify -d 16 -p ./my-proof.bin
+./target/x86_64-unknown-linux-gnu/release/cli verify -d 16 -p ./my-proof.bin --params ./keys/params.bin
 ```
 
 #### Distance
@@ -171,16 +170,16 @@ bitveil verify -d 16 -p ./my-proof.bin
 Calculate the Hamming distance between two binary vectors without generating a proof.
 
 ```bash
-bitveil distance --vector-a <VECTOR_A> --vector-b <VECTOR_B>
+./target/x86_64-unknown-linux-gnu/release/cli distance --vector-a <VECTOR_A> --vector-b <VECTOR_B>
 ```
 
 **Options:**
-- `-a, --vector-a <VECTOR_A>` - First binary vector (comma-separated)
-- `-b, --vector-b <VECTOR_B>` - Second binary vector (comma-separated)
+- `--vector-a <VECTOR_A>` - First binary vector (comma-separated)
+- `--vector-b <VECTOR_B>` - Second binary vector (comma-separated)
 
 **Example:**
 ```bash
-bitveil distance -a "1,0,1,0" -b "0,1,0,1"
+./target/x86_64-unknown-linux-gnu/release/cli distance --vector-a "1,0,1,0" --vector-b "0,1,0,1"
 ```
 
 This displays:
@@ -193,17 +192,17 @@ This displays:
 Run the mock prover for testing without generating actual keys or proofs. Useful for development and debugging.
 
 ```bash
-bitveil mock-prove [OPTIONS] --vector-a <VECTOR_A> --vector-b <VECTOR_B>
+./target/x86_64-unknown-linux-gnu/release/cli mock-prove [OPTIONS] --vector-a <VECTOR_A> --vector-b <VECTOR_B>
 ```
 
 **Options:**
-- `-a, --vector-a <VECTOR_A>` - First binary vector (comma-separated)
-- `-b, --vector-b <VECTOR_B>` - Second binary vector (comma-separated)
+- `--vector-a <VECTOR_A>` - First binary vector (comma-separated)
+- `--vector-b <VECTOR_B>` - Second binary vector (comma-separated)
 - `-k, --k <K>` - Circuit size parameter (default: 8)
 
 **Example:**
 ```bash
-bitveil mock-prove -a "1,0,1,0" -b "0,1,0,1" -k 8
+./target/x86_64-unknown-linux-gnu/release/cli mock-prove --vector-a "1,0,1,0" --vector-b "0,1,0,1" -k 8
 ```
 
 #### Draw
@@ -211,7 +210,7 @@ bitveil mock-prove -a "1,0,1,0" -b "0,1,0,1" -k 8
 Generate a visual representation of the circuit layout.
 
 ```bash
-bitveil draw [OPTIONS]
+./target/x86_64-unknown-linux-gnu/release/cli draw [OPTIONS]
 ```
 
 **Options:**
@@ -220,7 +219,7 @@ bitveil draw [OPTIONS]
 
 **Example:**
 ```bash
-bitveil draw -k 8 -o ./circuit-diagram.png
+./target/x86_64-unknown-linux-gnu/release/cli draw -k 8 -o ./circuit-diagram.png
 ```
 
 #### Example
@@ -228,7 +227,7 @@ bitveil draw -k 8 -o ./circuit-diagram.png
 Generate example binary vectors with a specific Hamming distance for testing.
 
 ```bash
-bitveil example [OPTIONS]
+./target/x86_64-unknown-linux-gnu/release/cli example [OPTIONS]
 ```
 
 **Options:**
@@ -236,7 +235,7 @@ bitveil example [OPTIONS]
 
 **Example:**
 ```bash
-bitveil example -d 16
+./target/x86_64-unknown-linux-gnu/release/cli example -d 16
 ```
 
 This outputs example vectors and shows the command to prove them.
@@ -245,20 +244,22 @@ This outputs example vectors and shows the command to prove them.
 
 ```bash
 # 1. Initialize setup and generate keys
-bitveil setup -k 8 -o ./keys
+./target/x86_64-unknown-linux-gnu/release/cli setup -k 8 -o ./keys
 
 # 2. Generate example vectors
-bitveil example -d 12
+./target/x86_64-unknown-linux-gnu/release/cli example -d 12
 
 # 3. Generate a proof
-bitveil prove -a "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" \
-              -b "1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" \
-              -o ./proof.bin
+./target/x86_64-unknown-linux-gnu/release/cli prove \
+  --vector-a "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" \
+  --vector-b "1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" \
+  -o ./proof.bin --params ./keys/params.bin
 
 # 4. Verify the proof
-bitveil verify -d 12 -p ./proof.bin
+./target/x86_64-unknown-linux-gnu/release/cli verify -d 12 -p ./proof.bin --params ./keys/params.bin
 
 # 5. Calculate distance without proof (for comparison)
-bitveil distance -a "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" \
-                 -b "1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"
+./target/x86_64-unknown-linux-gnu/release/cli distance \
+  --vector-a "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" \
+  --vector-b "1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"
 ```

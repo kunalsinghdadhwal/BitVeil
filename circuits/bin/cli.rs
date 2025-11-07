@@ -1,36 +1,48 @@
 use anyhow::{Context, Result};
 use circuits::circuits::{
-    calculate_hamming_distance, create_circuit, draw_circuit, empty_circuit,
-    generate_keys, generate_proof, generate_setup_params, run_mock_prover, verify,
+    calculate_hamming_distance, create_circuit, draw_circuit, empty_circuit, generate_keys,
+    generate_proof, generate_setup_params, run_mock_prover, verify,
 };
 use clap::{Parser, Subcommand};
-use halo2_proofs::pasta::Fp;
+use halo2_proofs::{
+    pasta::{EqAffine, Fp},
+    poly::commitment::Params,
+};
 use std::fs;
 use std::path::PathBuf;
 
 // Helper function to convert Fp to u64
 fn fp_to_u64(fp: &Fp) -> u64 {
-    // Since our hamming distances are small (0-32), we can safely use debug format
-    // and parse it, or we can use a more direct approach
-    format!("{:?}", fp)
-        .trim_start_matches("0x")
-        .chars()
-        .rev()
-        .take(16)
-        .collect::<String>()
-        .chars()
-        .rev()
-        .collect::<String>()
-        .parse::<u64>()
-        .unwrap_or_else(|_| {
-            // Fallback: extract from debug representation
-            let debug_str = format!("{:?}", fp);
-            if let Some(hex_str) = debug_str.strip_prefix("0x") {
-                u64::from_str_radix(&hex_str[hex_str.len().saturating_sub(16)..], 16).unwrap_or(0)
-            } else {
-                0
-            }
-        })
+    // Format as hex and parse
+    let hex_str = format!("{:?}", fp);
+    // The debug format is "0xHEXVALUE"
+    if let Some(hex) = hex_str.strip_prefix("0x") {
+        // Parse the last 16 hex digits (64 bits) as little-endian
+        let trimmed = if hex.len() > 16 {
+            &hex[hex.len() - 16..]
+        } else {
+            hex
+        };
+        u64::from_str_radix(trimmed, 16).unwrap_or(0)
+    } else {
+        0
+    }
+}
+
+// Helper function to load setup parameters
+fn load_params(path: &PathBuf) -> Result<Params<EqAffine>> {
+    let params_data =
+        fs::read(path).context(format!("Failed to read params file: {}", path.display()))?;
+    Params::<EqAffine>::read(&mut &params_data[..]).context("Failed to deserialize params")
+}
+
+// Helper function to save setup parameters
+fn save_params(params: &Params<EqAffine>, path: &PathBuf) -> Result<()> {
+    let mut buf = Vec::new();
+    params
+        .write(&mut buf)
+        .context("Failed to serialize params")?;
+    fs::write(path, buf).context(format!("Failed to write params to {}", path.display()))
 }
 
 #[derive(Parser)]
@@ -53,7 +65,7 @@ enum Commands {
         k: u32,
 
         /// Output directory for setup files
-        #[arg(short, long, default_value = "./bitveil-keys")]
+        #[arg(short, long, default_value = "./keys")]
         output: PathBuf,
     },
 
@@ -68,11 +80,11 @@ enum Commands {
         vector_b: String,
 
         /// Path to setup parameters
-        #[arg(short, long, default_value = "./bitveil-keys/params.bin")]
+        #[arg(short, long, default_value = "./keys/params.bin")]
         params: PathBuf,
 
         /// Path to proving key
-        #[arg(short = 'k', long, default_value = "./bitveil-keys/proving_key.bin")]
+        #[arg(short = 'k', long, default_value = "./keys/proving_key.bin")]
         proving_key: PathBuf,
 
         /// Output file for proof
@@ -95,11 +107,11 @@ enum Commands {
         proof: PathBuf,
 
         /// Path to setup parameters
-        #[arg(short = 'p', long, default_value = "./bitveil-keys/params.bin")]
+        #[arg(short = 'p', long, default_value = "./keys/params.bin")]
         params: PathBuf,
 
         /// Path to verifying key
-        #[arg(short = 'k', long, default_value = "./bitveil-keys/verifying_key.bin")]
+        #[arg(short = 'k', long, default_value = "./keys/verifying_key.bin")]
         verifying_key: PathBuf,
     },
 
@@ -166,39 +178,25 @@ fn main() -> Result<()> {
             // Generate keys
             println!("Generating proving and verifying keys...");
             let circuit = empty_circuit();
-            let (pk, vk) = generate_keys(&params, &circuit);
+            let (_pk, _vk) = generate_keys(&params, &circuit);
 
-            // Serialize and save (using bincode would be better, but for now we'll use serde_json for text format)
-            println!("Saving keys and parameters...");
+            // Note: Keys cannot be serialized in halo2_proofs 0.3.1
+            // They will be regenerated from params when needed
+            println!("Saving setup parameters...");
 
             // Save params
             let params_path = output.join("params.bin");
-            let params_bytes = serde_json::to_vec(&format!("{:?}", params))
-                .context("Failed to serialize params")?;
-            fs::write(&params_path, params_bytes).context("Failed to write params file")?;
-
-            // Save proving key
-            let pk_path = output.join("proving_key.bin");
-            let pk_bytes = serde_json::to_vec(&format!("{:?}", pk))
-                .context("Failed to serialize proving key")?;
-            fs::write(&pk_path, pk_bytes).context("Failed to write proving key")?;
-
-            // Save verifying key
-            let vk_path = output.join("verifying_key.bin");
-            let vk_bytes = serde_json::to_vec(&format!("{:?}", vk))
-                .context("Failed to serialize verifying key")?;
-            fs::write(&vk_path, vk_bytes).context("Failed to write verifying key")?;
+            save_params(&params, &params_path)?;
 
             println!("Setup complete!");
             println!("  Parameters: {}", params_path.display());
-            println!("  Proving key: {}", pk_path.display());
-            println!("  Verifying key: {}", vk_path.display());
+            println!("  Note: Keys will be regenerated from params when needed");
         }
 
         Some(Commands::Prove {
             vector_a,
             vector_b,
-            params: _,
+            params: params_path,
             proving_key: _,
             output,
             show_distance,
@@ -226,8 +224,10 @@ fn main() -> Result<()> {
             // Create circuit
             let circuit = create_circuit(a, b);
 
-            // For now, generate keys on the fly (in production, load from files)
-            let params = generate_setup_params(8);
+            // Load params and generate keys
+            println!("Loading setup parameters...");
+            let params = load_params(params_path)?;
+            println!("Generating keys from params...");
             let (pk, _vk) = generate_keys(&params, &empty_circuit());
 
             // Generate proof
@@ -247,7 +247,7 @@ fn main() -> Result<()> {
         Some(Commands::Verify {
             distance,
             proof,
-            params: _,
+            params: params_path,
             verifying_key: _,
         }) => {
             println!("Verifying zero-knowledge proof...");
@@ -261,19 +261,19 @@ fn main() -> Result<()> {
             // Create public input
             let pub_input = vec![Fp::from(*distance)];
 
-            // For now, generate keys on the fly (in production, load from files)
-            let params = generate_setup_params(8);
+            // Load params and generate keys
+            println!("Loading setup parameters...");
+            let params = load_params(params_path)?;
+            println!("Generating keys from params...");
             let (_pk, vk) = generate_keys(&params, &empty_circuit());
 
             // Verify proof
             match verify(&params, &vk, &pub_input, proof_bytes) {
                 Ok(_) => {
                     println!("Proof verified successfully!");
-                    println!("  The claimed Hamming distance is correct!");
                 }
-                Err(e) => {
+                Err(_) => {
                     println!("Proof verification failed!");
-                    println!("  Error: {:?}", e);
                     std::process::exit(1);
                 }
             }
@@ -390,7 +390,7 @@ fn main() -> Result<()> {
             );
             println!("\nUsage:");
             println!(
-                "  bitveil prove -a \"{}\" -b \"{}\"",
+                "  ./target/x86_64-unknown-linux-gnu/release/cli prove --vector-a \"{}\" --vector-b \"{}\"",
                 vector_a
                     .iter()
                     .map(|x| x.to_string())
@@ -419,9 +419,9 @@ fn parse_binary_vector(input: &str) -> Result<Vec<u64>> {
             let trimmed = s.trim();
             let num = trimmed
                 .parse::<u64>()
-                .context(format!("Invalid number: {}", trimmed))?;
+                .with_context(|| format!("Invalid input: '{}' is not a valid number", trimmed))?;
             if num != 0 && num != 1 {
-                anyhow::bail!("Binary vector must contain only 0 and 1, found: {}", num);
+                anyhow::bail!("Invalid input: '{}' must be 0 or 1", num);
             }
             Ok(num)
         })

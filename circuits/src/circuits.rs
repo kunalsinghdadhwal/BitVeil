@@ -293,7 +293,7 @@ impl<F: Field> Instructions<F> for BitVeilChip<F> {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct BitVeilCircuit<F: Field> {
     a: [Value<F>; BINARY_LENGTH],
     b: [Value<F>; BINARY_LENGTH],
