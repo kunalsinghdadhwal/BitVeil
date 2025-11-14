@@ -5,7 +5,7 @@ export default function FeaturesSection() {
   const features = [
     {
       title: "BROWSER-NATIVE ZK",
-      description: "Halo2 circuits compiled to WASM. All proofs generated client-side—nothing leaves your machine.",
+      description: "Halo2 circuits compiled to WASM. All proofs generated client-side nothing leaves your machine.",
       details: "Uses proven Halo2 cryptographic primitives with zero server-side computation required.",
     },
     {

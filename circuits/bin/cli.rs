@@ -4,6 +4,7 @@ use circuits::circuits::{
     generate_proof, generate_setup_params, run_mock_prover, verify,
 };
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use halo2_proofs::{
     pasta::{EqAffine, Fp},
     poly::commitment::Params,
@@ -188,7 +189,7 @@ fn main() -> Result<()> {
             let params_path = output.join("params.bin");
             save_params(&params, &params_path)?;
 
-            println!("Setup complete!");
+            println!("{}", "Setup complete!".green().bold());
             println!("  Parameters: {}", params_path.display());
             println!("  Note: Keys will be regenerated from params when needed");
         }
@@ -238,7 +239,7 @@ fn main() -> Result<()> {
 
             let distance_u64 = fp_to_u64(&hamming_distance[0]);
 
-            println!("Proof generated successfully!");
+            println!("{}", "Proof generated successfully!".green().bold());
             println!("  Proof saved to: {}", output.display());
             println!("  Hamming Distance: {}", distance_u64);
             println!("  Proof size: {} bytes", proof.len());
@@ -270,10 +271,10 @@ fn main() -> Result<()> {
             // Verify proof
             match verify(&params, &vk, &pub_input, proof_bytes) {
                 Ok(_) => {
-                    println!("Proof verified successfully!");
+                    println!("{}", "Proof verified successfully!".green().bold());
                 }
                 Err(_) => {
-                    println!("Proof verification failed!");
+                    println!("{}", "Proof verification failed!".red().bold());
                     std::process::exit(1);
                 }
             }
@@ -346,9 +347,11 @@ fn main() -> Result<()> {
             // Move the file if a different output is specified
             if output.file_name().unwrap() != "layout.png" {
                 fs::rename("layout.png", output).context("Failed to move layout file")?;
-                println!("Circuit layout saved to: {}", output.display());
+                println!("{}", "Circuit layout saved successfully!".green().bold());
+                println!("  Output: {}", output.display());
             } else {
-                println!("Circuit layout saved to: layout.png");
+                println!("{}", "Circuit layout saved successfully!".green().bold());
+                println!("  Output: layout.png");
             }
         }
 
@@ -417,11 +420,17 @@ fn parse_binary_vector(input: &str) -> Result<Vec<u64>> {
         .split(',')
         .map(|s| {
             let trimmed = s.trim();
-            let num = trimmed
-                .parse::<u64>()
-                .with_context(|| format!("Invalid input: '{}' is not a valid number", trimmed))?;
+            let num = trimmed.parse::<u64>().with_context(|| {
+                format!(
+                    "{}",
+                    format!("Invalid input: '{}' is not a valid number", trimmed).red()
+                )
+            })?;
             if num != 0 && num != 1 {
-                anyhow::bail!("Invalid input: '{}' must be 0 or 1", num);
+                anyhow::bail!(
+                    "{}",
+                    format!("Invalid input: '{}' must be 0 or 1", num).red()
+                );
             }
             Ok(num)
         })

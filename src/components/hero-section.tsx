@@ -1,7 +1,15 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, XIcon } from "lucide-react"
 import Link from "next/link"
+import {
+  MorphingDialog,
+  MorphingDialogTrigger,
+  MorphingDialogContainer,
+  MorphingDialogContent,
+  MorphingDialogImage,
+  MorphingDialogClose,
+} from "@/components/ui/morphing-dialog"
 
 export default function HeroSection() {
   return (
@@ -49,11 +57,42 @@ export default function HeroSection() {
 
             {/* Demo GIF Placeholder */}
             <div className="pt-8 border-t-4 border-black">
-              <img
-                src="/image.svg?height=300&width=500"
-                alt="Flow diagram: Input vectors → Generate proof → Verify privately"
-                className="w-full max-w-md mx-auto border-4 border-black"
-              />
+              <MorphingDialog
+                transition={{
+                  duration: 0.3,
+                  ease: "easeInOut",
+                }}
+              >
+                <MorphingDialogTrigger>
+                  <MorphingDialogImage
+                    src="/image.svg"
+                    alt="Flow diagram: Input vectors → Generate proof → Verify privately"
+                    className="w-full max-w-2xl mx-auto h-96 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                  />
+                </MorphingDialogTrigger>
+                <MorphingDialogContainer>
+                  <MorphingDialogContent className="relative">
+                    <MorphingDialogImage
+                      src="/image.svg"
+                      alt="Flow diagram: Input vectors → Generate proof → Verify privately - Expanded view"
+                      className="h-auto w-full max-w-[90vw] rounded-md object-contain lg:h-[90vh]"
+                    />
+                  </MorphingDialogContent>
+                  <MorphingDialogClose
+                    className="fixed right-6 top-6 h-fit w-fit rounded-full bg-white border-2 border-black p-1 shadow-md hover:bg-black hover:text-white transition-colors"
+                    variants={{
+                      initial: { opacity: 0 },
+                      animate: {
+                        opacity: 1,
+                        transition: { delay: 0.3, duration: 0.1 },
+                      },
+                      exit: { opacity: 0, transition: { duration: 0 } },
+                    }}
+                  >
+                    <XIcon className="h-5 w-5" />
+                  </MorphingDialogClose>
+                </MorphingDialogContainer>
+              </MorphingDialog>
             </div>
           </div>
         </Card>
