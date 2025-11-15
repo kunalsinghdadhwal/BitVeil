@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     siteName: 'BitVeil',
     images: [
       {
-        url: '/og-image.webp',
+        url: '/og-image.png',
         alt: 'BitVeil Demo - Zero-Knowledge Proof Testing',
       },
     ],
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'BitVeil Demo - Try ZK Proofs',
     description: 'Generate zero-knowledge proofs for Hamming distance in your browser. No server required.',
-    images: ['/og-image.webp'],
+    images: ['/og-image.png'],
   },
 }
 

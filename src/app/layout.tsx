@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     siteName: 'BitVeil',
     images: [
       {
-        url: '/og-image.webp',
+        url: '/og-image.png',
         alt: 'BitVeil - Zero-Knowledge Proof Privacy Demo',
       },
     ],
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'BitVeil - Zero-Knowledge Proof Privacy',
     description: 'Prove Hamming distance privately with ZK-SNARKs. WASM-powered browser demo using Halo2 circuits.',
-    images: ['/og-image.webp'],
+    images: ['/og-image.png'],
     creator: '@0xkun4l',
   },
   robots: {

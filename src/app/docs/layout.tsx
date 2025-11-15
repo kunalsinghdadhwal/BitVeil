@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     siteName: 'BitVeil',
     images: [
       {
-        url: '/og-image.webp',
+        url: '/og-image.png',
         alt: 'BitVeil Documentation',
       },
     ],
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'BitVeil Documentation',
     description: 'Complete guide to zero-knowledge proofs for Hamming distance with Halo2 and WebAssembly.',
-    images: ['/og-image.webp'],
+    images: ['/og-image.png'],
   },
 }
 
